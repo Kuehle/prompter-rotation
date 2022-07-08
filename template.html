@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<style>
+    html,
+    body {
+        margin: 0;
+        height: 100vh;
+        font-family: monospace;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+    }
+
+    .scrollwrapper {
+        height: 50vh;
+        overflow: scroll;
+    }
+
+    .textarea {
+        outline: none;
+        resize: none;
+        background-attachment: local;
+        background-image:
+            linear-gradient(to right, white 10px, transparent 10px),
+            linear-gradient(to left, white 10px, transparent 10px),
+            repeating-linear-gradient(white, white 30px, #ccc 30px, #ccc 31px, white 31px);
+        line-height: 31px;
+        padding: 8px 10px;
+        border: none;
+        width: 35em;
+        min-height: 20em;
+        max-width: 100%;
+        white-space: pre;
+    }
+
+    h1 {
+        color: #555;
+    }
+
+
+    a {
+        cursor: pointer;
+        color: #ccc;
+    }
+
+    .download {
+        display: block;
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        font-size: 2em;
+        padding: 0.3em 0.7em;
+    }
+</style>
+
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Journal Prompt</title>
+</head>
+
+<body>
+    <h1>%%%</h1>
+    <div class="scrollwrapper">
+
+        <div class="textarea" contenteditable="true" onkeydown="window.onkey()"></div>
+    </div>
+
+    <a class="download" title="download a record of all past entries as .csv" onclick="window.downloadCsv()">⤓</a>
+</body>
+<script>
+
+    window.question = document.querySelector('h1').innerText
+
+    const today = (new Date()).toISOString().slice(0, 10)
+    window.today = today
+
+    window.saveNote = () => {
+        throw new Error("DB not loaded yet")
+    }
+    const req = indexedDB.open("exampledb", 2);
+    req.addEventListener("upgradeneeded", (ev) => {
+        const db = req.result;
+        console.log("upgradeneeded", db)
+        db.createObjectStore("notes", { keyPath: "date" });
+    });
+    req.addEventListener("success", () => {
+        const db = req.result;
+        console.log("success", db)
+
+        const putNote = (note) => {
+            const tx = db.transaction(["notes"], "readwrite");
+            const notesTable = tx.objectStore("notes");
+            notesTable.put({
+                date: today,
+                question: window.question,
+                note
+            });
+        }
+
+        window.saveNote = putNote
+
+        const getAll = () => {
+            const tx = db.transaction(["notes"], "readonly")
+            const obj = tx.objectStore("notes")
+            return obj.getAll()
+        }
+
+        window.downloadCsv = () => {
+            const escape = (value) => '"' + value.replace(/"/g, '""') + '"'
+            const request = getAll()
+            request.onsuccess = () => {
+                const { result } = request
+                const keys = Array.from(result.reduce((acc, el) => Object.keys(el).reduce((acc, key) => acc.add(key), acc), new Set()))
+                const values = result.map((el) => keys.map((key) => escape(el[key] ?? "")))
+                const csv = keys.join(',') + '\n' + values.map(row => row.join(',')).join('\n')
+                download('daily-prompt_' + window.today + '.csv', csv)
+            }
+        }
+
+        const download = (filename, text) => {
+            var element = document.createElement('a');
+            element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+            element.setAttribute('download', filename);
+            element.style.display = 'none';
+            document.body.appendChild(element);
+            element.click();
+            document.body.removeChild(element);
+        }
+
+        window.download = download
+
+        const getNote = (date, cb) => {
+            const tx = db.transaction(["notes"], "readonly");
+            const employeeTable = tx.objectStore("notes");
+            const getReq = employeeTable.get(date);
+            getReq.addEventListener("success", () => cb(getReq.result));
+        }
+
+        const loadText = () => {
+            const textarea = document.querySelector('.textarea')
+            getNote(today, (note) => textarea.innerText = note?.note ?? "")
+        }
+
+        loadText()
+
+        const saveText = () => {
+            console.log("saving..")
+            const note = document.querySelector('.textarea').innerText.trim()
+            saveNote(note)
+        }
+
+        const debounce = (func, timeout = 250) => {
+            let timer;
+            return (...args) => {
+                clearTimeout(timer);
+                timer = setTimeout(() => { func.apply(this, args); }, timeout);
+            };
+        }
+
+        const debouncedSave = debounce(saveText)
+
+        window.onkey = () => {
+            debouncedSave()
+        }
+    });
+    document.querySelector('.textarea').focus()
+</script>
+
+</html>
