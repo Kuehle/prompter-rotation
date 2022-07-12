@@ -7,10 +7,18 @@
         margin: 0;
         height: 100vh;
         font-family: monospace;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        flex-direction: column;
+    }
+
+    .container {
+        max-width: 44em;
+        padding: 1em;
+        margin: 10vh auto;
+    }
+
+    h1 {
+        color: #666;
+        line-height: 1.4;
+        text-align: center;
     }
 
     .scrollwrapper {
@@ -23,24 +31,15 @@
         resize: none;
         background-attachment: local;
         background-image:
-            linear-gradient(to right, white 10px, transparent 10px),
-            linear-gradient(to left, white 10px, transparent 10px),
             repeating-linear-gradient(white, white 30px, #ccc 30px, #ccc 31px, white 31px);
         line-height: 31px;
-        padding: 8px 10px;
+        padding: 8px 0;
         border: none;
-        width: 35em;
         min-height: 20em;
-        max-width: 100%;
-        white-space: pre;
         font-size: 1.2em;
+        max-width: 30em;
+        margin: 0 auto;
     }
-
-    h1 {
-        color: #555;
-        max-width: 27em;
-    }
-
 
     a {
         cursor: pointer;
@@ -66,12 +65,15 @@
 </head>
 
 <body>
-    <h1>%%%</h1>
-    <div class="scrollwrapper">
+    <div class="container">
 
-        <div class="textarea" contenteditable="true" onkeydown="window.onkey()"></div>
+        <h1>This is the rhythm of the night, all night oh yeah, this is the rhythm of the night </h1>
+        <div class="scrollwrapper">
+
+            <div class="textarea" contenteditable="true" onkeydown="window.onkey()"></div>
+        </div>
+
     </div>
-
     <a class="download" title="download a record of all past entries as .csv" onclick="window.downloadCsv()">⤓</a>
 </body>
 <script>
