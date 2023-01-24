@@ -24,6 +24,12 @@
     .scrollwrapper {
         height: 50vh;
         overflow: scroll;
+	-mos-overflow-style: none;
+	scrollbar-width: none;
+    }
+    
+    .scrollwrapper::-webkit-scrollbar {
+    	display: none;
     }
 
     .textarea {
@@ -66,7 +72,7 @@
 
 <body>
     <div class="container">
-        <h1>%%%</h1>
+        <h1>Write about an enemy who eventually became your friend.</h1>
         <div class="scrollwrapper">
 
             <div class="textarea" contenteditable="true" onkeydown="window.onkey()"></div>
