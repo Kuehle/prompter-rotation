@@ -23,7 +23,7 @@ def update_lines_file(file_path, line):
         file.write(line + '\n')  # Append line as last line
 
 def main():
-    lines_path = 'lines'
+    lines_path = 'questions'
     template_path = 'template.html'
     
     today = read_first_line(lines_path)
