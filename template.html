@@ -24,6 +24,13 @@
     .scrollwrapper {
         height: 50vh;
         overflow: scroll;
+	-ms-overflow-style: none;  /* IE and Edge */
+	scrollbar-width: none;  /* Firefox */
+
+    }
+
+    .scrollwrapper::-webkit-scrollbar {
+        display: none;
     }
 
     .textarea {
