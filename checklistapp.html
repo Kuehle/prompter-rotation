@@ -1,135 +1,42 @@
-<body></body>
+<body>
+  <div class="checklist"></div>
+</body>
 
 <script>
-  window.question = document.querySelector("h1").innerText;
-
   const today = new Date().toISOString().slice(0, 10);
   window.today = today;
 
-  window.saveNote = () => {
-    throw new Error("DB not loaded yet");
+  const list = new URLSearchParams(window.location.search)
+    .get("foo")
+    .split("|") || ["Do the dishes", "Hang the laundry", "Eat"];
+
+  const values = JSON.parse(localStorage.getItem("checklist")) || [];
+
+  const renderList = (list, values) => {
+    const checklist = document.querySelector(".checklist");
+    const html =
+      list
+        .map(
+          (el) =>
+            `<div><input type="checkbox" onchange="saveList()" name="${el}" ${
+              values.includes(el) ? "checked" : ""
+            } ></input><label for="${el}">${el}</label></div>`
+        )
+        .join("\n") || "no list";
+    checklist.innerHTML = html;
   };
-  const req = indexedDB.open("exampledb", 2);
-  req.addEventListener("upgradeneeded", (ev) => {
-    const db = req.result;
-    console.log("upgradeneeded", db);
-    db.createObjectStore("notes", { keyPath: "date" });
-  });
-  req.addEventListener("success", () => {
-    const db = req.result;
-    console.log("success", db);
 
-    const putNote = (note) => {
-      const tx = db.transaction(["notes"], "readwrite");
-      const notesTable = tx.objectStore("notes");
-      notesTable.put({
-        date: today,
-        question: window.question,
-        note,
-      });
-    };
+  const saveList = () => {
+    const list = getList();
+    localStorage.setItem("checklist", JSON.stringify(list));
+  };
 
-    window.saveNote = putNote;
+  const getList = () =>
+    Array.from(
+      document.querySelectorAll('.checklist > div > input[type="checkbox"]')
+    )
+      .filter((el) => el.checked)
+      .map((el) => el.name);
 
-    const getAll = () => {
-      const tx = db.transaction(["notes"], "readonly");
-      const obj = tx.objectStore("notes");
-      return obj.getAll();
-    };
-
-    window.downloadCsv = () => {
-      const escape = (value) => '"' + value.replace(/"/g, '""') + '"';
-      const request = getAll();
-      request.onsuccess = () => {
-        const { result } = request;
-        const keys = Array.from(
-          result.reduce(
-            (acc, el) =>
-              Object.keys(el).reduce((acc, key) => acc.add(key), acc),
-            new Set()
-          )
-        );
-        const values = result.map((el) =>
-          keys.map((key) => escape(el[key] ?? ""))
-        );
-        const csv =
-          keys.join(",") + "\n" + values.map((row) => row.join(",")).join("\n");
-        download("daily-prompt_" + window.today + ".csv", csv);
-      };
-    };
-
-    const download = (filename, text) => {
-      var element = document.createElement("a");
-      element.setAttribute(
-        "href",
-        "data:text/plain;charset=utf-8," + encodeURIComponent(text)
-      );
-      element.setAttribute("download", filename);
-      element.style.display = "none";
-      document.body.appendChild(element);
-      element.click();
-      document.body.removeChild(element);
-    };
-
-    window.download = download;
-
-    const getNote = (date, cb) => {
-      const tx = db.transaction(["notes"], "readonly");
-      const employeeTable = tx.objectStore("notes");
-      const getReq = employeeTable.get(date);
-      getReq.addEventListener("success", () => cb(getReq.result));
-    };
-
-    const loadText = () => {
-      const textarea = document.querySelector(".textarea");
-      getNote(today, (note) => (textarea.innerText = note?.note ?? ""));
-    };
-
-    const list = ['Do the dishes', 'Hang the laundry', 'Eat']
-
-    const renderList = (list, values) => {
-
-
-      const checklist = document.querySelector(".checklist");
-        const html = list.map((el) => `<div><input type="checkbox" name="${el}" ${value.includes(el) : 'checked' : ''} ></input><label for="${el}">${el}</label></div>`).join("\n")
-            checklist.innerHTML = html
-    };
-
-    const loadList = () => {
-      getNote(today, (note) => {
-        try {
-          renderList(list, JSON.parse(note));
-        } catch (e) {
-          console.warn("loading failed", e);
-          renderList(list, []);
-        }
-      });
-    };
-
-
-
-    const saveText = () => {
-        // TODO
-      console.log("saving..");
-      const note = document.querySelector(".textarea").innerText.trim();
-      saveNote(note);
-    };
-
-    const debounce = (func, timeout = 250) => {
-      let timer;
-      return (...args) => {
-        clearTimeout(timer);
-        timer = setTimeout(() => {
-          func.apply(this, args);
-        }, timeout);
-      };
-    };
-
-    const debouncedSave = debounce(saveText);
-
-    window.onkey = () => {
-      debouncedSave();
-    };
-  });
-  document.querySelector(".textarea").focus();
+  renderList(list, values);
 </script>
